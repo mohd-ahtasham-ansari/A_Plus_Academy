@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Helmet } from 'react-helmet';
 import { useLocation } from 'react-router-dom';
 import { enrollStudent } from '../services/enrollmentService';
@@ -6,6 +6,21 @@ import { enrollStudent } from '../services/enrollmentService';
 const Enrollment = () => {
   const location = useLocation();
   
+  const subjectOptions = [
+    "Maths", "Science", "English Literature", 
+    "English Grammar", "English Speaking", "Social Science",
+    "Economics", "Geography", "Political Science", "Accounts", "History"
+  ];
+
+  const getInitialSubjects = () => {
+    const params = new URLSearchParams(location.search);
+    const preselectedSubject = params.get('subject');
+    if (preselectedSubject && subjectOptions.includes(preselectedSubject)) {
+      return [preselectedSubject];
+    }
+    return [];
+  };
+
   const [formData, setFormData] = useState({
     studentName: '',
     guardianName: '',
@@ -13,30 +28,12 @@ const Enrollment = () => {
     email: '',
     school: '',
     class: '',
-    subjects: [],
+    subjects: getInitialSubjects(),
     message: ''
   });
 
   const [loading, setLoading] = useState(false);
   const [status, setStatus] = useState({ type: '', message: '' });
-
-  const subjectOptions = [
-    "Maths", "Science", "English Literature", 
-    "English Grammar", "English Speaking", "Social Science",
-    "Economics", "Geography", "Political Science", "Accounts", "History"
-  ];
-
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const preselectedSubject = params.get('subject');
-    
-    if (preselectedSubject && subjectOptions.includes(preselectedSubject)) {
-      setFormData(prev => ({
-        ...prev,
-        subjects: prev.subjects.includes(preselectedSubject) ? prev.subjects : [...prev.subjects, preselectedSubject]
-      }));
-    }
-  }, [location.search]);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;

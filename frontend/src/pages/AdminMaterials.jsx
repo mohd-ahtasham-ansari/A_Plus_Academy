@@ -50,18 +50,6 @@ const AdminMaterials = () => {
 
   const navigate = useNavigate();
 
-  useEffect(() => {
-    const token = localStorage.getItem('adminToken');
-    if (!token) {
-      navigate('/admin');
-      return;
-    }
-    fetchMaterials();
-    fetchCourses();
-    fetchStats();
-    fetchFaculty();
-  }, [navigate]);
-
   const fetchMaterials = async () => {
     try {
       const data = await getNotes();
@@ -99,6 +87,21 @@ const AdminMaterials = () => {
       console.error('Failed to fetch faculty', error);
     }
   };
+
+  useEffect(() => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      navigate('/admin');
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetchMaterials();
+      fetchCourses();
+      fetchStats();
+      fetchFaculty();
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('adminToken');

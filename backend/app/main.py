@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from .routes import enroll, notes, admin, contact, courses, stats, faculty
 from .database import engine, Base, SessionLocal
-from .models import Course, Statistic, Faculty
+from .models import Course, Statistic, Faculty, Admin
 import os
 
 # Create database tables
@@ -47,16 +47,34 @@ def seed_courses():
             db.add(Faculty(**f))
         db.commit()
 
+    if db.query(Admin).count() == 0:
+        default_pwd = os.getenv("ADMIN_PASSWORD", "aplus123")
+        default_email = os.getenv("ADMIN_EMAIL", "enrollaplusacademy05@gmail.com")
+        from .auth import get_password_hash
+        hashed_pwd = get_password_hash(default_pwd)
+        db.add(Admin(password=hashed_pwd, email=default_email))
+        db.commit()
+
     db.close()
 
 seed_courses()
 
 app = FastAPI(title="A Plus Academy API")
 
+# Configure allowed origins dynamically from env or fallback to wildcard
+allowed_origins_env = os.getenv("ALLOWED_ORIGINS", "*")
+allowed_origins = [origin.strip() for origin in allowed_origins_env.split(",") if origin.strip()]
+
+# If allow_origins contains "*" and allow_credentials is True, Starlette will raise a ConfigurationError.
+# Therefore, we automatically set allow_credentials=False when wildcard is allowed.
+allow_credentials = True
+if "*" in allowed_origins:
+    allow_credentials = False
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=allowed_origins,
+    allow_credentials=allow_credentials,
     allow_methods=["*"],
     allow_headers=["*"],
 )

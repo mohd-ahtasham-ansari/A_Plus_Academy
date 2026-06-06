@@ -27,6 +27,7 @@ const Contact = () => {
       setStatus({ type: 'success', message: 'Your query has been sent successfully. We will get back to you soon!' });
       setFormData({ name: '', email: '', phone: '', message: '' });
     } catch (error) {
+      console.error('Failed to submit contact query:', error);
       setStatus({ type: 'error', message: 'Failed to send query. Please try calling or WhatsApp directly.' });
     } finally {
       setLoading(false);

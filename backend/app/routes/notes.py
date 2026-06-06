@@ -5,9 +5,12 @@ from pydantic import BaseModel
 import shutil
 import os
 import uuid
+import cloudinary
+import cloudinary.uploader
 
 from ..database import get_db
-from ..models import Material
+from ..models import Material, Admin
+from ..auth import get_current_admin
 
 router = APIRouter()
 
@@ -42,22 +45,29 @@ async def create_note(
     student_class: str = Form(..., alias="class"),
     chapter: str = Form(...),
     file: UploadFile = File(...),
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_admin: Admin = Depends(get_current_admin)
 ):
     if not file.filename.endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
 
-    # Save file
-    file_ext = os.path.splitext(file.filename)[1]
-    unique_filename = f"{uuid.uuid4()}{file_ext}"
-    file_path = f"uploads/{unique_filename}"
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    if os.getenv("CLOUDINARY_URL"):
+        try:
+            result = cloudinary.uploader.upload(file.file, resource_type="raw")
+            pdf_url = result.get("secure_url")
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Cloudinary upload failed: {str(e)}")
+    else:
+        # Fallback to local save
+        file_ext = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_ext}"
+        file_path = f"uploads/{unique_filename}"
+        
+        with open(file_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
 
-    # Note: Using http://127.0.0.1:8000 for local dev.
-    # In production, this should be an environment variable or relative path.
-    pdf_url = f"http://127.0.0.1:8000/uploads/{unique_filename}"
+        backend_url = os.getenv("BACKEND_URL", "http://127.0.0.1:8000").rstrip("/")
+        pdf_url = f"{backend_url}/uploads/{unique_filename}"
 
     new_material = Material(
         subject=subject,
@@ -72,16 +82,25 @@ async def create_note(
     return {"message": "Material uploaded successfully", "id": new_material.id}
 
 @router.delete("/notes/{note_id}")
-def delete_note(note_id: int, db: Session = Depends(get_db)):
+def delete_note(note_id: int, db: Session = Depends(get_db), current_admin: Admin = Depends(get_current_admin)):
     material = db.query(Material).filter(Material.id == note_id).first()
     if not material:
         raise HTTPException(status_code=404, detail="Material not found")
     
-    # Optional: Delete file from disk
-    filename = material.pdf_url.split("/")[-1]
-    file_path = f"uploads/{filename}"
-    if os.path.exists(file_path):
-        os.remove(file_path)
+    if os.getenv("CLOUDINARY_URL") and "cloudinary.com" in material.pdf_url:
+        try:
+            # For raw files in Cloudinary, public_id is typically the filename with extension.
+            # We'll just extract it from the URL.
+            public_id = material.pdf_url.split("/")[-1]
+            cloudinary.uploader.destroy(public_id, resource_type="raw")
+        except Exception as e:
+            print(f"Failed to delete from Cloudinary: {e}")
+    else:
+        # Delete file from disk
+        filename = material.pdf_url.split("/")[-1]
+        file_path = f"uploads/{filename}"
+        if os.path.exists(file_path):
+            os.remove(file_path)
 
     db.delete(material)
     db.commit()

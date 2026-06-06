@@ -1,6 +1,6 @@
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
-import { FaPhoneAlt, FaWhatsapp } from 'react-icons/fa';
+import { FaPhoneAlt } from 'react-icons/fa';
 
 const Hero = () => {
   return (

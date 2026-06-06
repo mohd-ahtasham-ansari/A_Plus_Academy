@@ -19,9 +19,9 @@ const StudyMaterials = () => {
         console.error('Error fetching notes:', error);
         // Fallback dummy data if API is not running
         setNotes([
-          { id: 1, subject: "Science", class: "10", chapter: "Light Reflection", pdfUrl: "#" },
-          { id: 2, subject: "Mathematics", class: "10", chapter: "Quadratic Equations", pdfUrl: "#" },
-          { id: 3, subject: "English", class: "12", chapter: "The Last Lesson", pdfUrl: "#" }
+          { id: 1, subject: "Science", student_class: "10", chapter: "Light Reflection", pdfUrl: "#" },
+          { id: 2, subject: "Mathematics", student_class: "10", chapter: "Quadratic Equations", pdfUrl: "#" },
+          { id: 3, subject: "English", student_class: "12", chapter: "The Last Lesson", pdfUrl: "#" }
         ]);
       } finally {
         setLoading(false);
@@ -54,7 +54,7 @@ const StudyMaterials = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        
+
         {/* Filters */}
         <div className="bg-white p-6 rounded-xl shadow-md mb-8 flex flex-col md:flex-row gap-4 border border-gray-100">
           <div className="relative flex-grow">
@@ -67,7 +67,7 @@ const StudyMaterials = () => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          
+
           <select
             className="w-full md:w-48 border border-gray-300 rounded-md px-4 py-2 focus:ring-primary focus:border-primary"
             value={subjectFilter}
@@ -86,7 +86,7 @@ const StudyMaterials = () => {
             onChange={(e) => setClassFilter(e.target.value)}
           >
             <option value="">All Classes</option>
-            {[6,7,8,9,10,11,12].map(num => (
+            {[6, 7, 8, 9, 10, 11, 12].map(num => (
               <option key={num} value={num.toString()}>Class {num}</option>
             ))}
           </select>

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String
+from sqlalchemy import Column, Integer, String, DateTime
 from .database import Base
 
 class Material(Base):
@@ -37,3 +37,12 @@ class Faculty(Base):
     subject = Column(String)
     qualification = Column(String)
     experience = Column(String)
+
+class Admin(Base):
+    __tablename__ = "admin"
+
+    id = Column(Integer, primary_key=True, index=True)
+    email = Column(String, unique=True, index=True)
+    password = Column(String)
+    reset_otp = Column(String, nullable=True)
+    reset_otp_expiry = Column(DateTime, nullable=True)
